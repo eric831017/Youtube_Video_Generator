@@ -1,0 +1,15 @@
+[Unit]
+Description=AI Video Telegram Bot
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/video_bot
+ExecStart=/home/ubuntu/video_bot/venv/bin/python main.py
+Restart=always
+RestartSec=10
+EnvironmentFile=/home/ubuntu/video_bot/.env
+
+[Install]
+WantedBy=multi-user.target

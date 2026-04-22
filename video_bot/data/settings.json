@@ -1,0 +1,9 @@
+{
+  "default_model": "kling-2.1",
+  "default_ratio": "16:9",
+  "default_duration": 8,
+  "default_resolution": "1080p",
+  "monthly_budget_usd": 10.00,
+  "youtube_default_privacy": "public",
+  "youtube_default_category": "28"
+}
