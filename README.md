@@ -25,7 +25,7 @@ A single-user Telegram bot that turns text (or text + image) prompts into AI-gen
 
 ```bash
 git clone https://github.com/eric831017/youtube_video_generator.git
-cd youtube_video_generator/video_bot
+cd youtube_video_generator
 
 python3 -m venv venv
 source venv/bin/activate
@@ -70,7 +70,7 @@ The bot uses a single OAuth client for both Drive upload and YouTube upload.
 You have two ways to provide the client secret to the bot — pick one:
 
 - **Option A (recommended):** put `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` into `.env` (see next step).
-- **Option B:** download the JSON from the Credentials page and save it as `data/client_secrets.json` inside the `video_bot/` directory.
+- **Option B:** download the JSON from the Credentials page and save it as `data/client_secrets.json` in the project root.
 
 ## 5. Configure environment variables
 
@@ -120,7 +120,7 @@ Cached images auto-expire after 10 minutes; the bot will notify you and reset th
 
 ## 8. Run as a systemd service (optional)
 
-For a VPS deployment, copy the bot to `/home/ubuntu/video_bot` (or edit the paths in `video_bot.service`), then:
+For a VPS deployment, copy the project to `/home/ubuntu/video_bot` (or edit the paths in `video_bot.service`), then:
 
 ```bash
 sudo cp video_bot.service /etc/systemd/system/video_bot.service
@@ -140,7 +140,7 @@ Adjust them if your layout differs.
 ## Project layout
 
 ```
-video_bot/
+.
 ├── main.py                   # bot entry point, command wiring, TTL loop
 ├── config.py                 # env loading, settings persistence, model table
 ├── handlers/
