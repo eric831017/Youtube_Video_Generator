@@ -81,19 +81,22 @@ async def handle_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         fal_id = model_cfg["t2v_fal_id"]
 
     try:
-        request_id = await fal_client.submit_generation(fal_id, payload)
+        fal_req = await fal_client.submit_generation(fal_id, payload)
     except fal_client.FalError as exc:
         logger.exception("fal submission failed")
         await context.bot.send_message(chat_id, f"❌ 提交 fal 失敗：{exc}")
         session.reset()
         return
 
-    session.fal_request_id = request_id
-    logger.info("fal request_id=%s model=%s", request_id, model_key)
+    session.fal_request_id = fal_req.request_id
+    logger.info(
+        "fal request_id=%s model=%s status_url=%s",
+        fal_req.request_id, model_key, fal_req.status_url,
+    )
 
     task = asyncio.create_task(
         _poll_generation(
-            context, chat_id, user.id, fal_id, request_id, model_key, duration
+            context, chat_id, user.id, fal_req, model_key, duration
         )
     )
     session.polling_task = task
@@ -103,18 +106,18 @@ async def _poll_generation(
     context: ContextTypes.DEFAULT_TYPE,
     chat_id: int,
     user_id: int,
-    fal_id: str,
-    request_id: str,
+    fal_req: fal_client.FalRequest,
     model_key: str,
     duration: int,
 ) -> None:
     session: UserSession = get_session(context, user_id)
     start = session.generation_start_time or datetime.now()
+    request_id = fal_req.request_id
     try:
         for attempt in range(1, POLL_MAX_ATTEMPTS + 1):
             await asyncio.sleep(POLL_INTERVAL_SECS)
             try:
-                status = await fal_client.check_status(fal_id, request_id)
+                status = await fal_client.check_status(fal_req.status_url)
             except fal_client.FalError as exc:
                 logger.warning("status poll error: %s", exc)
                 continue
@@ -126,7 +129,7 @@ async def _poll_generation(
 
             if status_code in ("COMPLETED", "SUCCESS", "OK"):
                 try:
-                    result = await fal_client.get_result(fal_id, request_id)
+                    result = await fal_client.get_result(fal_req.response_url)
                 except fal_client.FalError as exc:
                     await context.bot.send_message(
                         chat_id, f"❌ 取得生成結果失敗：{exc}"

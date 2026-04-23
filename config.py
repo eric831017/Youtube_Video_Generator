@@ -50,8 +50,8 @@ MODELS: Dict[str, Dict[str, Any]] = {
         "max_duration": 10,
     },
     "seedance-1.5": {
-        "t2v_fal_id": "fal-ai/seedance-video/v1.5-pro/text-to-video",
-        "i2v_fal_id": "fal-ai/seedance-video/v1.5-pro/image-to-video",
+        "t2v_fal_id": "fal-ai/bytedance/seedance/v1.5/pro/text-to-video",
+        "i2v_fal_id": "fal-ai/bytedance/seedance/v1.5/pro/image-to-video",
         "price_per_sec": 0.014,
         "label": "Seedance 1.5",
         "max_duration": 10,

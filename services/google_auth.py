@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 from typing import Optional
+from urllib.parse import parse_qs, urlparse
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -17,7 +18,9 @@ from config import (
     logger,
 )
 
-OOB_REDIRECT = "urn:ietf:wg:oauth:2.0:oob"
+LOCALHOST_REDIRECT = "http://localhost"
+
+_pending_flow: Optional[Flow] = None
 
 
 def _client_config() -> dict:
@@ -34,7 +37,7 @@ def _client_config() -> dict:
             "client_secret": GOOGLE_CLIENT_SECRET,
             "auth_uri": "https://accounts.google.com/o/oauth2/auth",
             "token_uri": "https://oauth2.googleapis.com/token",
-            "redirect_uris": [OOB_REDIRECT, "http://localhost"],
+            "redirect_uris": [LOCALHOST_REDIRECT],
         }
     }
 
@@ -75,13 +78,14 @@ def get_credentials() -> Credentials:
 
 def build_auth_flow() -> Flow:
     flow = Flow.from_client_config(_client_config(), scopes=GOOGLE_OAUTH_SCOPES)
-    flow.redirect_uri = OOB_REDIRECT
+    flow.redirect_uri = LOCALHOST_REDIRECT
     return flow
 
 
 def build_auth_url() -> str:
-    flow = build_auth_flow()
-    url, _ = flow.authorization_url(
+    global _pending_flow
+    _pending_flow = build_auth_flow()
+    url, _ = _pending_flow.authorization_url(
         access_type="offline",
         include_granted_scopes="true",
         prompt="consent",
@@ -90,8 +94,18 @@ def build_auth_url() -> str:
 
 
 def complete_auth(code: str) -> Credentials:
-    flow = build_auth_flow()
-    flow.fetch_token(code=code.strip())
+    global _pending_flow
+    code = code.strip()
+    # Accept either a bare code or the full redirect URL pasted from the browser
+    if code.startswith("http"):
+        qs = parse_qs(urlparse(code).query)
+        extracted = qs.get("code", [None])[0]
+        if not extracted:
+            raise ValueError("No 'code' parameter found in the URL you sent.")
+        code = extracted
+    flow = _pending_flow or build_auth_flow()
+    _pending_flow = None
+    flow.fetch_token(code=code)
     creds = flow.credentials
     _save_credentials(creds)
     return creds

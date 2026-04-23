@@ -69,8 +69,17 @@ async def upload_image(image_b64: str, mime: str) -> str:
     return url
 
 
-async def submit_generation(fal_id: str, payload: Dict[str, Any]) -> str:
-    """Submit to fal queue, return request_id. Retries once on 429."""
+class FalRequest:
+    __slots__ = ("request_id", "status_url", "response_url")
+
+    def __init__(self, request_id: str, status_url: str, response_url: str) -> None:
+        self.request_id = request_id
+        self.status_url = status_url
+        self.response_url = response_url
+
+
+async def submit_generation(fal_id: str, payload: Dict[str, Any]) -> FalRequest:
+    """Submit to fal queue, return FalRequest with URLs from the response."""
     url = f"{FAL_QUEUE_BASE}/{fal_id}"
     async with httpx.AsyncClient(timeout=API_TIMEOUT) as client:
         for attempt in range(2):
@@ -88,22 +97,29 @@ async def submit_generation(fal_id: str, payload: Dict[str, Any]) -> str:
     request_id = data.get("request_id")
     if not request_id:
         raise FalError(f"fal submit returned no request_id: {data}")
-    return request_id
+    # Use URLs returned by the API; fall back to constructed URLs if absent
+    status_url = (
+        data.get("status_url")
+        or f"{FAL_QUEUE_BASE}/{fal_id}/requests/{request_id}/status"
+    )
+    response_url = (
+        data.get("response_url")
+        or f"{FAL_QUEUE_BASE}/{fal_id}/requests/{request_id}"
+    )
+    return FalRequest(request_id, status_url, response_url)
 
 
-async def check_status(fal_id: str, request_id: str) -> Dict[str, Any]:
-    url = f"{FAL_QUEUE_BASE}/{fal_id}/requests/{request_id}/status"
+async def check_status(status_url: str) -> Dict[str, Any]:
     async with httpx.AsyncClient(timeout=API_TIMEOUT) as client:
-        resp = await client.get(url, headers=_headers())
+        resp = await client.get(status_url, headers=_headers(), params={"logs": 1})
     if resp.status_code >= 400:
         raise FalError(f"fal status failed: {resp.status_code} {resp.text}")
     return resp.json()
 
 
-async def get_result(fal_id: str, request_id: str) -> Dict[str, Any]:
-    url = f"{FAL_QUEUE_BASE}/{fal_id}/requests/{request_id}"
+async def get_result(response_url: str) -> Dict[str, Any]:
     async with httpx.AsyncClient(timeout=API_TIMEOUT) as client:
-        resp = await client.get(url, headers=_headers())
+        resp = await client.get(response_url, headers=_headers())
     if resp.status_code >= 400:
         raise FalError(f"fal result failed: {resp.status_code} {resp.text}")
     return resp.json()

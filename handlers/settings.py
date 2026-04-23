@@ -253,7 +253,9 @@ async def auth_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         await update.effective_message.reply_text(f"❌ 無法建立授權 URL：{exc}")
         return
     await update.effective_message.reply_text(
-        "🔐 請用瀏覽器打開以下 URL，完成授權後將頁面顯示的 code 傳回：\n\n"
+        "🔐 請用瀏覽器打開以下 URL，登入並授權後，瀏覽器會跳轉到一個無法連線的 localhost 頁面——"
+        "這是正常的。請從瀏覽器網址列複製完整的 URL（或只複製 code= 後面的值），然後傳給我：\n\n"
         f"{url}\n\n"
-        "然後執行：/auth <code>"
+        "範例（貼完整 URL）：/auth http://localhost/?code=4/0Adxxxxxx\n"
+        "範例（只貼 code）：/auth 4/0Adxxxxxx"
     )
