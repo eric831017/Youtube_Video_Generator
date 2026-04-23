@@ -42,33 +42,84 @@ GOOGLE_OAUTH_SCOPES = [
 MAX_IMAGE_BYTES = 20 * 1024 * 1024
 
 MODELS: Dict[str, Dict[str, Any]] = {
-    "kling-2.1": {
-        "t2v_fal_id": "fal-ai/kling-video/v2.1/standard/text-to-video",
-        "i2v_fal_id": "fal-ai/kling-video/v2.1/standard/image-to-video",
-        "price_per_sec": 0.010,
-        "label": "Kling 2.1",
+    # Kling 2.1: Standard tier is image-to-video only. For text-to-video at
+    # v2.1 the "master" or "pro" tier endpoint is required.
+    "kling-2.1-pro": {
+        "t2v_fal_id": "fal-ai/kling-video/v2.1/pro/text-to-video",
+        "i2v_fal_id": "fal-ai/kling-video/v2.1/pro/image-to-video",
+        "price_per_sec": 0.014,
+        "label": "Kling 2.1 Pro",
+        "max_duration": 10,
+    },
+    "kling-2.1-master": {
+        "t2v_fal_id": "fal-ai/kling-video/v2.1/master/text-to-video",
+        "i2v_fal_id": "fal-ai/kling-video/v2.1/master/image-to-video",
+        "price_per_sec": 0.028,
+        "label": "Kling 2.1 Master",
+        "max_duration": 10,
+    },
+    "kling-2.6-pro": {
+        "t2v_fal_id": "fal-ai/kling-video/v2.6/pro/text-to-video",
+        "i2v_fal_id": "fal-ai/kling-video/v2.6/pro/image-to-video",
+        "price_per_sec": 0.035,
+        "label": "Kling 2.6 Pro",
         "max_duration": 10,
     },
     "seedance-1.5": {
         "t2v_fal_id": "fal-ai/bytedance/seedance/v1.5/pro/text-to-video",
         "i2v_fal_id": "fal-ai/bytedance/seedance/v1.5/pro/image-to-video",
         "price_per_sec": 0.014,
-        "label": "Seedance 1.5",
+        "label": "Seedance 1.5 Pro",
+        "max_duration": 10,
+    },
+    "seedance-2.0": {
+        "t2v_fal_id": "bytedance/seedance-2.0/text-to-video",
+        "i2v_fal_id": "bytedance/seedance-2.0/image-to-video",
+        "price_per_sec": 0.062,
+        "label": "Seedance 2.0",
+        "max_duration": 10,
+    },
+    "seedance-2.0-fast": {
+        "t2v_fal_id": "bytedance/seedance-2.0/fast/text-to-video",
+        "i2v_fal_id": "bytedance/seedance-2.0/fast/image-to-video",
+        "price_per_sec": 0.018,
+        "label": "Seedance 2.0 Fast",
         "max_duration": 10,
     },
     "veo-3.1": {
-        "t2v_fal_id": "fal-ai/veo3",
-        "i2v_fal_id": "fal-ai/veo3",
-        "price_per_sec": 0.016,
+        "t2v_fal_id": "fal-ai/veo3.1",
+        "i2v_fal_id": "fal-ai/veo3.1/image-to-video",
+        "price_per_sec": 0.050,
         "label": "Veo 3.1",
         "max_duration": 8,
     },
+    "veo-3.1-fast": {
+        "t2v_fal_id": "fal-ai/veo3.1/fast",
+        "i2v_fal_id": "fal-ai/veo3.1/fast/image-to-video",
+        "price_per_sec": 0.025,
+        "label": "Veo 3.1 Fast",
+        "max_duration": 8,
+    },
     "wan-2.6": {
-        "t2v_fal_id": "fal-ai/wan-video/v2.6/text-to-video",
-        "i2v_fal_id": "fal-ai/wan-video/v2.6/image-to-video",
-        "price_per_sec": 0.005,
+        "t2v_fal_id": "wan/v2.6/text-to-video",
+        "i2v_fal_id": "wan/v2.6/image-to-video",
+        "price_per_sec": 0.010,
         "label": "Wan 2.6",
         "max_duration": 10,
+    },
+    "minimax-hailuo-02": {
+        "t2v_fal_id": "fal-ai/minimax/hailuo-02/standard/text-to-video",
+        "i2v_fal_id": "fal-ai/minimax/hailuo-02/standard/image-to-video",
+        "price_per_sec": 0.045,
+        "label": "MiniMax Hailuo 02",
+        "max_duration": 10,
+    },
+    "pixverse-4.5": {
+        "t2v_fal_id": "fal-ai/pixverse/v4.5/text-to-video",
+        "i2v_fal_id": "fal-ai/pixverse/v4.5/image-to-video",
+        "price_per_sec": 0.020,
+        "label": "PixVerse 4.5",
+        "max_duration": 8,
     },
 }
 
@@ -87,7 +138,7 @@ YOUTUBE_CATEGORIES = {
 }
 
 DEFAULT_SETTINGS: Dict[str, Any] = {
-    "default_model": "kling-2.1",
+    "default_model": "kling-2.6-pro",
     "default_ratio": "16:9",
     "default_duration": 8,
     "default_resolution": "1080p",
@@ -118,6 +169,14 @@ def load_settings() -> Dict[str, Any]:
         if key not in data:
             data[key] = value
             changed = True
+    if data.get("default_model") not in MODELS:
+        logger.warning(
+            "default_model %r not in MODELS, resetting to %s",
+            data.get("default_model"),
+            DEFAULT_SETTINGS["default_model"],
+        )
+        data["default_model"] = DEFAULT_SETTINGS["default_model"]
+        changed = True
     if changed:
         _atomic_write_json(SETTINGS_PATH, data)
     return data

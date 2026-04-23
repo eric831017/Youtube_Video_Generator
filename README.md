@@ -4,7 +4,7 @@ A single-user Telegram bot that turns text (or text + image) prompts into AI-gen
 
 ## Features
 
-- Text-to-video and image-to-video generation (Kling 2.1 / Seedance 1.5 / Veo 3.1 / Wan 2.6)
+- Text-to-video and image-to-video via 11 fal.ai models: Kling 2.6 Pro, Kling 2.1 Pro/Master, Seedance 2.0 / 2.0 Fast / 1.5 Pro, Veo 3.1 / 3.1 Fast, Wan 2.6, MiniMax Hailuo 02, PixVerse 4.5
 - GPT-4o prompt optimisation with vision awareness when an image is provided
 - Inline confirmation with cost estimate before every generation
 - Automatic upload to a Google Drive folder with a public share link
@@ -103,9 +103,12 @@ The bot will start polling. On Telegram:
 
 1. Send `/start` to confirm the bot replies.
 2. Send `/auth`. The bot replies with a Google authorisation URL.
-3. Open the URL in a browser, sign in with the Google account that owns the target Drive/YouTube, grant access, and copy the code that Google shows.
-4. Back in Telegram, send `/auth <code>` (paste the code after the command).
-5. The bot replies `✅ Google 授權完成` and stores the refresh token in `data/token.json`. You won't need to repeat this step.
+3. Open the URL in a browser and sign in with the Google account that owns the target Drive/YouTube. After granting access, the browser redirects to a `localhost` page that fails to load — **this is normal**.
+4. Copy the full URL from the browser address bar (it looks like `http://localhost/?code=4/0Adxxxx&scope=...`), or just the `code=` value after it.
+5. Back in Telegram send either:
+   - `/auth http://localhost/?code=4/0Adxxxxxx&scope=...` (paste the full URL), or
+   - `/auth 4/0Adxxxxxx` (paste only the code value)
+6. The bot replies `✅ Google 授權完成` and stores the refresh token in `data/token.json`. You won't need to repeat this step.
 
 ## 7. Daily usage
 
@@ -136,6 +139,26 @@ The unit file expects:
 - `.env` file at `/home/ubuntu/video_bot/.env`
 
 Adjust them if your layout differs.
+
+## Available models
+
+Select a model via `/settings → 修改模型`. Prices are per second of generated video (verify current pricing at [fal.ai](https://fal.ai)).
+
+| Key | Label | t2v endpoint | i2v endpoint | $/sec | Max dur |
+|---|---|---|---|---|---|
+| `kling-2.6-pro` *(default)* | Kling 2.6 Pro | `fal-ai/kling-video/v2.6/pro/text-to-video` | `…/image-to-video` | $0.035 | 10 s |
+| `kling-2.1-pro` | Kling 2.1 Pro | `fal-ai/kling-video/v2.1/pro/text-to-video` | `…/image-to-video` | $0.014 | 10 s |
+| `kling-2.1-master` | Kling 2.1 Master | `fal-ai/kling-video/v2.1/master/text-to-video` | `…/image-to-video` | $0.028 | 10 s |
+| `seedance-2.0` | Seedance 2.0 | `bytedance/seedance-2.0/text-to-video` | `…/image-to-video` | $0.062 | 10 s |
+| `seedance-2.0-fast` | Seedance 2.0 Fast | `bytedance/seedance-2.0/fast/text-to-video` | `…/image-to-video` | $0.018 | 10 s |
+| `seedance-1.5` | Seedance 1.5 Pro | `fal-ai/bytedance/seedance/v1.5/pro/text-to-video` | `…/image-to-video` | $0.014 | 10 s |
+| `veo-3.1` | Veo 3.1 | `fal-ai/veo3.1` | `fal-ai/veo3.1/image-to-video` | $0.050 | 8 s |
+| `veo-3.1-fast` | Veo 3.1 Fast | `fal-ai/veo3.1/fast` | `fal-ai/veo3.1/fast/image-to-video` | $0.025 | 8 s |
+| `wan-2.6` | Wan 2.6 | `wan/v2.6/text-to-video` | `wan/v2.6/image-to-video` | $0.010 | 10 s |
+| `minimax-hailuo-02` | MiniMax Hailuo 02 | `fal-ai/minimax/hailuo-02/standard/text-to-video` | `…/image-to-video` | $0.045 | 10 s |
+| `pixverse-4.5` | PixVerse 4.5 | `fal-ai/pixverse/v4.5/text-to-video` | `…/image-to-video` | $0.020 | 8 s |
+
+> **Note:** Kling 2.1 *Standard* (`fal-ai/kling-video/v2.1/standard/…`) is image-to-video only and is intentionally excluded — using it for text-to-video causes a 404.
 
 ## Project layout
 
