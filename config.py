@@ -124,7 +124,7 @@ MODELS: Dict[str, Dict[str, Any]] = {
 }
 
 ASPECT_RATIOS = ["16:9", "9:16", "1:1", "4:3"]
-DURATIONS = [5, 8, 10]
+DURATIONS = [5, 8, 10, 15, 30]
 RESOLUTIONS = ["720p", "1080p"]
 YOUTUBE_PRIVACY_OPTIONS = ["public", "unlisted", "private"]
 YOUTUBE_CATEGORIES = {
