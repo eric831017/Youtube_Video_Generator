@@ -42,86 +42,91 @@ GOOGLE_OAUTH_SCOPES = [
 MAX_IMAGE_BYTES = 20 * 1024 * 1024
 
 MODELS: Dict[str, Dict[str, Any]] = {
-    # Kling 2.1: Standard tier is image-to-video only. For text-to-video at
-    # v2.1 the "master" or "pro" tier endpoint is required.
+    # ── Seedance ──────────────────────────────────────────────────
+    "seedance-1.5": {
+        "t2v_fal_id": "fal-ai/bytedance/seedance/v1.5/pro/text-to-video",
+        "i2v_fal_id": "fal-ai/bytedance/seedance/v1.5/pro/image-to-video",
+        "price_per_sec": 0.052,
+        "label": "Seedance 1.5 Pro",
+        "max_duration": 12,
+    },
+    "seedance-2.0": {
+        "t2v_fal_id": "fal-ai/bytedance/seedance-2.0/text-to-video",
+        "i2v_fal_id": "fal-ai/bytedance/seedance-2.0/image-to-video",
+        "price_per_sec": 0.240,
+        "label": "Seedance 2.0",
+        "max_duration": 15,
+    },
+    # ── Sora ──────────────────────────────────────────────────────
+    "sora-2": {
+        "t2v_fal_id": "fal-ai/sora",
+        "i2v_fal_id": "fal-ai/sora",
+        "price_per_sec": 0.100,
+        "label": "Sora 2",
+        "max_duration": 15,
+    },
+    "sora-2-pro": {
+        "t2v_fal_id": "fal-ai/sora/pro",
+        "i2v_fal_id": "fal-ai/sora/pro",
+        "price_per_sec": 0.500,
+        "label": "Sora 2 Pro",
+        "max_duration": 15,
+    },
+    # ── Veo ───────────────────────────────────────────────────────
+    "veo-3": {
+        "t2v_fal_id": "fal-ai/veo3",
+        "i2v_fal_id": "fal-ai/veo3",
+        "price_per_sec": 0.400,
+        "label": "Veo 3",
+        "max_duration": 8,
+    },
+    "veo-3.1": {
+        "t2v_fal_id": "fal-ai/veo3-fast",
+        "i2v_fal_id": "fal-ai/veo3-fast",
+        "price_per_sec": 0.400,
+        "label": "Veo 3.1",
+        "max_duration": 8,
+    },
+    # ── Kling ─────────────────────────────────────────────────────
     "kling-2.1-pro": {
         "t2v_fal_id": "fal-ai/kling-video/v2.1/pro/text-to-video",
         "i2v_fal_id": "fal-ai/kling-video/v2.1/pro/image-to-video",
-        "price_per_sec": 0.014,
+        "price_per_sec": 0.098,
         "label": "Kling 2.1 Pro",
         "max_duration": 10,
     },
     "kling-2.1-master": {
         "t2v_fal_id": "fal-ai/kling-video/v2.1/master/text-to-video",
         "i2v_fal_id": "fal-ai/kling-video/v2.1/master/image-to-video",
-        "price_per_sec": 0.028,
+        "price_per_sec": 0.280,
         "label": "Kling 2.1 Master",
         "max_duration": 10,
     },
-    "kling-2.6-pro": {
+    "kling-2.6": {
         "t2v_fal_id": "fal-ai/kling-video/v2.6/pro/text-to-video",
         "i2v_fal_id": "fal-ai/kling-video/v2.6/pro/image-to-video",
-        "price_per_sec": 0.035,
+        "price_per_sec": 0.140,
         "label": "Kling 2.6 Pro",
         "max_duration": 10,
     },
-    "seedance-1.5": {
-        "t2v_fal_id": "fal-ai/bytedance/seedance/v1.5/pro/text-to-video",
-        "i2v_fal_id": "fal-ai/bytedance/seedance/v1.5/pro/image-to-video",
-        "price_per_sec": 0.014,
-        "label": "Seedance 1.5 Pro",
+    "kling-3-pro": {
+        "t2v_fal_id": "fal-ai/kling-video/v3/pro/text-to-video",
+        "i2v_fal_id": "fal-ai/kling-video/v3/pro/image-to-video",
+        "price_per_sec": 0.168,
+        "label": "Kling 3 Pro",
         "max_duration": 10,
     },
-    "seedance-2.0": {
-        "t2v_fal_id": "bytedance/seedance-2.0/text-to-video",
-        "i2v_fal_id": "bytedance/seedance-2.0/image-to-video",
-        "price_per_sec": 0.062,
-        "label": "Seedance 2.0",
-        "max_duration": 10,
-    },
-    "seedance-2.0-fast": {
-        "t2v_fal_id": "bytedance/seedance-2.0/fast/text-to-video",
-        "i2v_fal_id": "bytedance/seedance-2.0/fast/image-to-video",
-        "price_per_sec": 0.018,
-        "label": "Seedance 2.0 Fast",
-        "max_duration": 10,
-    },
-    "veo-3.1": {
-        "t2v_fal_id": "fal-ai/veo3.1",
-        "i2v_fal_id": "fal-ai/veo3.1/image-to-video",
-        "price_per_sec": 0.050,
-        "label": "Veo 3.1",
-        "max_duration": 8,
-    },
-    "veo-3.1-fast": {
-        "t2v_fal_id": "fal-ai/veo3.1/fast",
-        "i2v_fal_id": "fal-ai/veo3.1/fast/image-to-video",
-        "price_per_sec": 0.025,
-        "label": "Veo 3.1 Fast",
-        "max_duration": 8,
-    },
+    # ── Wan ───────────────────────────────────────────────────────
     "wan-2.6": {
-        "t2v_fal_id": "wan/v2.6/text-to-video",
-        "i2v_fal_id": "wan/v2.6/image-to-video",
-        "price_per_sec": 0.010,
+        "t2v_fal_id": "fal-ai/wan-video/v2.6/text-to-video",
+        "i2v_fal_id": "fal-ai/wan-video/v2.6/image-to-video",
+        "price_per_sec": 0.100,
         "label": "Wan 2.6",
         "max_duration": 10,
     },
-    "minimax-hailuo-02": {
-        "t2v_fal_id": "fal-ai/minimax/hailuo-02/standard/text-to-video",
-        "i2v_fal_id": "fal-ai/minimax/hailuo-02/standard/image-to-video",
-        "price_per_sec": 0.045,
-        "label": "MiniMax Hailuo 02",
-        "max_duration": 10,
-    },
-    "pixverse-4.5": {
-        "t2v_fal_id": "fal-ai/pixverse/v4.5/text-to-video",
-        "i2v_fal_id": "fal-ai/pixverse/v4.5/image-to-video",
-        "price_per_sec": 0.020,
-        "label": "PixVerse 4.5",
-        "max_duration": 8,
-    },
 }
+
+DEFAULT_MODEL = "kling-2.1-pro"
 
 ASPECT_RATIOS = ["16:9", "9:16", "1:1", "4:3"]
 DURATIONS = [5, 8, 10, 15, 30]
@@ -138,7 +143,7 @@ YOUTUBE_CATEGORIES = {
 }
 
 DEFAULT_SETTINGS: Dict[str, Any] = {
-    "default_model": "kling-2.6-pro",
+    "default_model": DEFAULT_MODEL,
     "default_ratio": "16:9",
     "default_duration": 8,
     "default_resolution": "1080p",

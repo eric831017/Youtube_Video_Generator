@@ -4,7 +4,7 @@ A single-user Telegram bot that turns text (or text + image) prompts into AI-gen
 
 ## Features
 
-- Text-to-video and image-to-video via 11 fal.ai models: Kling 2.6 Pro, Kling 2.1 Pro/Master, Seedance 2.0 / 2.0 Fast / 1.5 Pro, Veo 3.1 / 3.1 Fast, Wan 2.6, MiniMax Hailuo 02, PixVerse 4.5
+- Text-to-video and image-to-video via 11 fal.ai models: Seedance 1.5 Pro / 2.0, Sora 2 / 2 Pro, Veo 3 / 3.1, Kling 2.1 Pro / 2.1 Master / 2.6 Pro / 3 Pro, Wan 2.6
 - GPT-4o prompt optimisation with vision awareness when an image is provided
 - Inline confirmation with cost estimate before every generation
 - Automatic upload to a Google Drive folder with a public share link
@@ -146,19 +146,19 @@ Select a model via `/settings → 修改模型`. Prices are per second of genera
 
 | Key | Label | t2v endpoint | i2v endpoint | $/sec | Max dur |
 |---|---|---|---|---|---|
-| `kling-2.6-pro` *(default)* | Kling 2.6 Pro | `fal-ai/kling-video/v2.6/pro/text-to-video` | `…/image-to-video` | $0.035 | 10 s |
-| `kling-2.1-pro` | Kling 2.1 Pro | `fal-ai/kling-video/v2.1/pro/text-to-video` | `…/image-to-video` | $0.014 | 10 s |
-| `kling-2.1-master` | Kling 2.1 Master | `fal-ai/kling-video/v2.1/master/text-to-video` | `…/image-to-video` | $0.028 | 10 s |
-| `seedance-2.0` | Seedance 2.0 | `bytedance/seedance-2.0/text-to-video` | `…/image-to-video` | $0.062 | 10 s |
-| `seedance-2.0-fast` | Seedance 2.0 Fast | `bytedance/seedance-2.0/fast/text-to-video` | `…/image-to-video` | $0.018 | 10 s |
-| `seedance-1.5` | Seedance 1.5 Pro | `fal-ai/bytedance/seedance/v1.5/pro/text-to-video` | `…/image-to-video` | $0.014 | 10 s |
-| `veo-3.1` | Veo 3.1 | `fal-ai/veo3.1` | `fal-ai/veo3.1/image-to-video` | $0.050 | 8 s |
-| `veo-3.1-fast` | Veo 3.1 Fast | `fal-ai/veo3.1/fast` | `fal-ai/veo3.1/fast/image-to-video` | $0.025 | 8 s |
-| `wan-2.6` | Wan 2.6 | `wan/v2.6/text-to-video` | `wan/v2.6/image-to-video` | $0.010 | 10 s |
-| `minimax-hailuo-02` | MiniMax Hailuo 02 | `fal-ai/minimax/hailuo-02/standard/text-to-video` | `…/image-to-video` | $0.045 | 10 s |
-| `pixverse-4.5` | PixVerse 4.5 | `fal-ai/pixverse/v4.5/text-to-video` | `…/image-to-video` | $0.020 | 8 s |
+| `seedance-1.5` | Seedance 1.5 Pro | `fal-ai/bytedance/seedance/v1.5/pro/text-to-video` | `…/image-to-video` | $0.052 | 12 s |
+| `seedance-2.0` | Seedance 2.0 | `fal-ai/bytedance/seedance-2.0/text-to-video` | `…/image-to-video` | $0.240 | 15 s |
+| `sora-2` | Sora 2 | `fal-ai/sora` | `fal-ai/sora` (pass `image_url`) | $0.100 | 15 s |
+| `sora-2-pro` | Sora 2 Pro | `fal-ai/sora/pro` | `fal-ai/sora/pro` (pass `image_url`) | $0.500 | 15 s |
+| `veo-3` | Veo 3 | `fal-ai/veo3` | `fal-ai/veo3` | $0.400 | 8 s |
+| `veo-3.1` | Veo 3.1 | `fal-ai/veo3-fast` | `fal-ai/veo3-fast` | $0.400 | 8 s |
+| `kling-2.1-pro` *(default)* | Kling 2.1 Pro | `fal-ai/kling-video/v2.1/pro/text-to-video` | `…/image-to-video` | $0.098 | 10 s |
+| `kling-2.1-master` | Kling 2.1 Master | `fal-ai/kling-video/v2.1/master/text-to-video` | `…/image-to-video` | $0.280 | 10 s |
+| `kling-2.6` | Kling 2.6 Pro | `fal-ai/kling-video/v2.6/pro/text-to-video` | `…/image-to-video` | $0.140 | 10 s |
+| `kling-3-pro` | Kling 3 Pro | `fal-ai/kling-video/v3/pro/text-to-video` | `…/image-to-video` | $0.168 | 10 s |
+| `wan-2.6` | Wan 2.6 | `fal-ai/wan-video/v2.6/text-to-video` | `fal-ai/wan-video/v2.6/image-to-video` | $0.100 | 10 s |
 
-> **Note:** Kling 2.1 *Standard* (`fal-ai/kling-video/v2.1/standard/…`) is image-to-video only and is intentionally excluded — using it for text-to-video causes a 404.
+> **Note:** A few endpoint slugs above (`fal-ai/sora`, `fal-ai/sora/pro`, `fal-ai/veo3-fast`, `fal-ai/wan-video/v2.6/*`, `fal-ai/kling-video/v3/pro/*`) should be verified against <https://fal.ai/explore/models> before first use — fal occasionally changes slugs between versions. The bot logs a warning at startup listing any such endpoint it will route traffic to.
 
 ## Project layout
 

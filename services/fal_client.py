@@ -7,11 +7,37 @@ from typing import Any, Dict, Optional
 
 import httpx
 
-from config import FAL_API_KEY, logger
+from config import FAL_API_KEY, MODELS, logger
 
 FAL_STORAGE_INITIATE = "https://rest.alpha.fal.ai/storage/upload/initiate"
 FAL_STORAGE_LEGACY = "https://fal.run/storage/upload"
 FAL_QUEUE_BASE = "https://queue.fal.run"
+
+UNVERIFIED_ENDPOINTS = {
+    "fal-ai/sora",
+    "fal-ai/sora/pro",
+    "fal-ai/veo3-fast",
+    "fal-ai/wan-video/v2.6/text-to-video",
+    "fal-ai/wan-video/v2.6/image-to-video",
+    "fal-ai/kling-video/v3/pro/text-to-video",
+    "fal-ai/kling-video/v3/pro/image-to-video",
+}
+
+
+def warn_unverified_endpoints() -> None:
+    """Log a warning for models whose fal endpoint slug has not been verified."""
+    flagged = []
+    for key, cfg in MODELS.items():
+        for field in ("t2v_fal_id", "i2v_fal_id"):
+            endpoint = cfg.get(field)
+            if endpoint in UNVERIFIED_ENDPOINTS:
+                flagged.append(f"{key}.{field}={endpoint}")
+    if flagged:
+        logger.warning(
+            "Unverified fal endpoints detected — verify at "
+            "https://fal.ai/explore/models before first use: %s",
+            ", ".join(flagged),
+        )
 
 API_TIMEOUT = httpx.Timeout(30.0, connect=10.0)
 DOWNLOAD_TIMEOUT = httpx.Timeout(120.0, connect=15.0)

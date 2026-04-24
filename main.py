@@ -35,6 +35,7 @@ from handlers.settings import (
 )
 from handlers.upload import handle_youtube_choice
 from models.session import State
+from services.fal_client import warn_unverified_endpoints
 
 WELCOME_MESSAGE = (
     "👋 *歡迎使用 AI 影片生成機器人！*\n\n"
@@ -122,6 +123,7 @@ def get_store_from_app(application: Application):
 
 async def _on_startup(application: Application) -> None:
     load_settings()
+    warn_unverified_endpoints()
     get_store_from_app(application)
     application.bot_data["ttl_task"] = asyncio.create_task(
         image_ttl_loop(application)
