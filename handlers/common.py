@@ -8,7 +8,7 @@ from typing import Optional
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from config import MODELS, TELEGRAM_ALLOWED_USER_ID
+from config import MODELS, TELEGRAM_ALLOWED_USER_IDS
 from models.session import SessionStore, UserSession
 
 _MDV2_SPECIAL = r"_*[]()~`>#+-=|{}.!\\"
@@ -29,7 +29,7 @@ def is_authorized(update: Update) -> bool:
     user = update.effective_user
     if user is None:
         return False
-    return user.id == TELEGRAM_ALLOWED_USER_ID
+    return user.id in TELEGRAM_ALLOWED_USER_IDS
 
 
 def get_store(context: ContextTypes.DEFAULT_TYPE) -> SessionStore:

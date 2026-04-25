@@ -28,6 +28,12 @@ CLIENT_SECRETS_PATH = DATA_DIR / "client_secrets.json"
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_ALLOWED_USER_ID = int(os.getenv("TELEGRAM_ALLOWED_USER_ID", "0") or 0)
+_extra = os.getenv("TELEGRAM_ALLOWED_USER_IDS", "")
+TELEGRAM_ALLOWED_USER_IDS: set[int] = {
+    int(x) for x in _extra.split(",") if x.strip().isdigit()
+}
+if TELEGRAM_ALLOWED_USER_ID:
+    TELEGRAM_ALLOWED_USER_IDS.add(TELEGRAM_ALLOWED_USER_ID)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 FAL_API_KEY = os.getenv("FAL_API_KEY", "")
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
@@ -203,8 +209,8 @@ def validate_env() -> None:
     for name in ("TELEGRAM_BOT_TOKEN", "OPENAI_API_KEY", "FAL_API_KEY"):
         if not globals().get(name):
             missing.append(name)
-    if TELEGRAM_ALLOWED_USER_ID == 0:
-        missing.append("TELEGRAM_ALLOWED_USER_ID")
+    if not TELEGRAM_ALLOWED_USER_IDS:
+        missing.append("TELEGRAM_ALLOWED_USER_ID or TELEGRAM_ALLOWED_USER_IDS")
     if missing:
         raise RuntimeError(
             "Missing required environment variables: " + ", ".join(missing)
