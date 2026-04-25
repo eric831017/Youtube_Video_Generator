@@ -71,7 +71,10 @@ async def settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 def _field_options(field: str) -> List[InlineKeyboardButton]:
     if field == "model":
         return [
-            InlineKeyboardButton(cfg["label"], callback_data=f"setv:model:{key}")
+            InlineKeyboardButton(
+                f"{cfg['label']} ${cfg['price_per_sec']:.3f}/s",
+                callback_data=f"setv:model:{key}",
+            )
             for key, cfg in MODELS.items()
         ]
     if field == "ratio":

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import subprocess
 from datetime import datetime
 
 from telegram import Update
@@ -33,6 +34,7 @@ from handlers.settings import (
     settings_callback,
     settings_command,
 )
+from handlers.storyboard import handle_storyboard_callback
 from handlers.upload import handle_youtube_choice
 from models.session import State
 from services.fal_client import warn_unverified_endpoints
@@ -121,10 +123,42 @@ def get_store_from_app(application: Application):
     return store
 
 
+def _check_ffmpeg() -> bool:
+    try:
+        subprocess.run(
+            ["ffmpeg", "-version"], capture_output=True, check=True, timeout=5
+        )
+        subprocess.run(
+            ["ffprobe", "-version"], capture_output=True, check=True, timeout=5
+        )
+        return True
+    except Exception:  # noqa: BLE001
+        return False
+
+
 async def _on_startup(application: Application) -> None:
     load_settings()
     warn_unverified_endpoints()
     get_store_from_app(application)
+    ffmpeg_ok = _check_ffmpeg()
+    application.bot_data["ffmpeg_available"] = ffmpeg_ok
+    if ffmpeg_ok:
+        logger.info("FFmpeg available — multi-shot generation enabled")
+    else:
+        logger.warning(
+            "FFmpeg/ffprobe not found — multi-shot generation disabled. "
+            "Run: sudo apt install -y ffmpeg"
+        )
+        try:
+            await application.bot.send_message(
+                chat_id=__import__("config").TELEGRAM_ALLOWED_USER_ID,
+                text=(
+                    "⚠️ FFmpeg 未安裝，多段生成功能停用。\n"
+                    "請在 VPS 執行：sudo apt install -y ffmpeg"
+                ),
+            )
+        except Exception:  # noqa: BLE001
+            pass
     application.bot_data["ttl_task"] = asyncio.create_task(
         image_ttl_loop(application)
     )
@@ -175,6 +209,7 @@ def build_application() -> Application:
     application.add_handler(CallbackQueryHandler(handle_rewrite, pattern=r"^rewrite$"))
     application.add_handler(CallbackQueryHandler(handle_cancel_callback, pattern=r"^cancel$"))
     application.add_handler(CallbackQueryHandler(handle_youtube_choice, pattern=r"^yt:"))
+    application.add_handler(CallbackQueryHandler(handle_storyboard_callback, pattern=r"^storyboard:"))
     application.add_handler(CallbackQueryHandler(settings_callback, pattern=r"^set(v)?:"))
 
     application.add_handler(

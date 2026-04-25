@@ -3,9 +3,8 @@ from __future__ import annotations
 
 from typing import Optional
 
-from openai import AsyncOpenAI
-
-from config import OPENAI_API_KEY, logger
+from config import logger
+from services.openai_client import get_client
 
 SYSTEM_T2V = (
     "You are a cinematic AI video prompt expert.\n"
@@ -32,16 +31,6 @@ SYSTEM_REF = (
     "based on the user's text input.\n"
     "Keep it under 200 words. Return only the optimized prompt."
 )
-
-
-_client: Optional[AsyncOpenAI] = None
-
-
-def _get_client() -> AsyncOpenAI:
-    global _client
-    if _client is None:
-        _client = AsyncOpenAI(api_key=OPENAI_API_KEY)
-    return _client
 
 
 async def optimize_prompt(
@@ -74,7 +63,7 @@ async def optimize_prompt(
         {"role": "user", "content": user_content},
     ]
 
-    client = _get_client()
+    client = get_client()
     response = await client.chat.completions.create(
         model="gpt-4o",
         messages=messages,

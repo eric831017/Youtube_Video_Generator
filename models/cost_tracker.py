@@ -59,15 +59,18 @@ def record_generation(
     cost: float,
     youtube_url: Optional[str] = None,
     drive_url: Optional[str] = None,
+    shots: int = 1,
+    total_duration: Optional[int] = None,
 ) -> Dict[str, Any]:
     month = _current_month()
     data = _load_raw()
     bucket = _ensure_month(data, month)
-    entry = {
+    entry: Dict[str, Any] = {
         "timestamp": datetime.now().isoformat(timespec="seconds"),
         "model": model,
         "mode": mode,
-        "duration": duration,
+        "shots": shots,
+        "duration": total_duration if total_duration is not None else duration,
         "cost": round(float(cost), 4),
         "youtube_url": youtube_url,
         "drive_url": drive_url,

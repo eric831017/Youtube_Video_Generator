@@ -125,6 +125,22 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         return
 
     session = get_session(context, user.id)
+
+    # Storyboard revision text — intercept before the normal state guard
+    if session.state == State.AWAITING_STORYBOARD_REVISION:
+        from handlers.storyboard import run_storyboarding_flow
+        session.state = State.STORYBOARDING
+        progress = await message.reply_text("♻️ 修改分鏡中...")
+        await run_storyboarding_flow(
+            context,
+            message.chat.id,
+            session,
+            session.raw_prompt,
+            revision_text=text,
+            progress_message=progress,
+        )
+        return
+
     if session.state not in (State.IDLE, State.AWAITING_PROMPT):
         await message.reply_text(
             "⚠️ 目前流程進行中，請等待或 /cancel 後重新開始。"
@@ -132,6 +148,55 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         return
 
     session.raw_prompt = text
+
+    # Image mode always goes single-shot
+    if session.image_mode in ("i2v", "ref"):
+        await _run_single_shot(message, session, context)
+        return
+
+    # Check if ffmpeg is available for multi-shot classification
+    ffmpeg_ok = context.application.bot_data.get("ffmpeg_available", False)
+    if not ffmpeg_ok:
+        await _run_single_shot(message, session, context)
+        return
+
+    # Classify intent
+    session.state = State.CLASSIFYING
+    progress = await message.reply_text("🤔 分析輸入類型中...")
+
+    from handlers.storyboard import classify_intent, run_storyboarding_flow
+    try:
+        intent = await classify_intent(text)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("classify_intent failed (%s), defaulting to single_shot", exc)
+        intent = "single_shot"
+
+    if intent == "multi_shot":
+        session.shot_type = "multi"
+        session.state = State.STORYBOARDING
+        try:
+            await progress.edit_text("🎬 生成分鏡腳本中...")
+        except Exception:  # noqa: BLE001
+            pass
+        await run_storyboarding_flow(
+            context,
+            message.chat.id,
+            session,
+            text,
+            progress_message=progress,
+        )
+    else:
+        session.shot_type = "single"
+        try:
+            await progress.delete()
+        except Exception:  # noqa: BLE001
+            pass
+        await _run_single_shot(message, session, context)
+
+
+async def _run_single_shot(message, session, context) -> None:
+    """Optimize prompt, check budget, and show single-shot confirmation."""
+    text = session.raw_prompt
     session.state = State.OPTIMIZING
     progress = await message.reply_text("⏳ 優化 Prompt 中...")
 
@@ -186,7 +251,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
     mode_label = mode_emoji_label(session.image_mode)
     lines = [
-        f"🎬 *優化後 Prompt：*",
+        "🎬 *優化後 Prompt：*",
         md2(optimized),
         "",
         "⚙️ *本次生成設定*",

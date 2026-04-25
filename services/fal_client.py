@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 import httpx
 
@@ -172,6 +172,64 @@ def extract_video_url(result: Dict[str, Any]) -> Optional[str]:
         if isinstance(first, str):
             return first
     return None
+
+
+_POLL_INTERVAL = 30
+_POLL_MAX = 20
+
+
+async def generate_and_poll(
+    fal_id: str,
+    payload: Dict[str, Any],
+    progress_callback: Optional[Callable] = None,
+) -> str:
+    """Submit to fal queue, poll until done, return video URL. Raises FalError."""
+    fal_req = await submit_generation(fal_id, payload)
+    for attempt in range(1, _POLL_MAX + 1):
+        await asyncio.sleep(_POLL_INTERVAL)
+        try:
+            status = await check_status(fal_req.status_url)
+        except FalError as exc:
+            logger.warning("status poll error attempt %d: %s", attempt, exc)
+            continue
+        status_code = (status.get("status") or "").upper()
+        if status_code in ("COMPLETED", "SUCCESS", "OK"):
+            result = await get_result(fal_req.response_url)
+            video_url = extract_video_url(result)
+            if not video_url:
+                raise FalError("Generation completed but no video URL in response")
+            return video_url
+        if status_code in ("FAILED", "ERROR"):
+            err = (
+                status.get("error")
+                or status.get("logs")
+                or status.get("detail")
+                or "unknown"
+            )
+            raise FalError(f"Generation failed: {err}")
+        if progress_callback and attempt % 2 == 0:
+            elapsed = attempt * _POLL_INTERVAL / 60
+            try:
+                await progress_callback(f"⏳ 生成中... (已等待 {elapsed:.1f} 分鐘)")
+            except Exception:  # noqa: BLE001
+                pass
+    raise FalError("Generation timed out")
+
+
+async def upload_image_file(path: str) -> str:
+    """Upload a local image file to fal storage, return public URL."""
+    mime = "image/png" if path.lower().endswith(".png") else "image/jpeg"
+    with open(path, "rb") as fh:
+        raw_bytes = fh.read()
+    b64 = base64.b64encode(raw_bytes).decode("ascii")
+    return await upload_image(b64, mime)
+
+
+async def download_video_to_file(url: str, path: str) -> None:
+    """Download video from URL to a local file path."""
+    data = await download_video(url)
+    with open(path, "wb") as fh:
+        fh.write(data)
 
 
 async def download_video(url: str) -> bytes:

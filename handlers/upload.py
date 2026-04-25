@@ -1,6 +1,8 @@
 """Google Drive + YouTube upload handlers."""
 from __future__ import annotations
 
+import contextlib
+import os
 import re
 from datetime import datetime
 
@@ -89,6 +91,81 @@ async def start_drive_upload(
     )
     body = (
         f"✅ *影片已生成完成\\!*\n\n"
+        f"🔗 {md2_url('Google Drive 預覽連結', session.drive_link)}\n\n"
+        f"是否要上傳至 YouTube？"
+    )
+    await context.bot.send_message(
+        chat_id,
+        body,
+        parse_mode=ParseMode.MARKDOWN_V2,
+        reply_markup=keyboard,
+        disable_web_page_preview=False,
+    )
+
+
+async def start_drive_upload_merged(
+    context: ContextTypes.DEFAULT_TYPE,
+    chat_id: int,
+    user_id: int,
+    model_key: str,
+    total_duration: int,
+    shots: int,
+) -> None:
+    """Drive upload for a locally-merged multi-shot video."""
+    session = get_session(context, user_id)
+    session.state = State.UPLOADING_DRIVE
+    await context.bot.send_message(chat_id, "📤 上傳合併影片到 Google Drive 中...")
+
+    merged_path = session.merged_video_path
+    if not merged_path or not os.path.exists(merged_path):
+        await context.bot.send_message(chat_id, "❌ 找不到合併後的影片檔案。")
+        session.reset()
+        return
+
+    with open(merged_path, "rb") as fh:
+        video_bytes = fh.read()
+    with contextlib.suppress(FileNotFoundError):
+        os.remove(merged_path)
+    session.merged_video_path = None
+
+    filename = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{model_key}_multi.mp4"
+    for attempt in range(2):
+        try:
+            result = await drive_client.upload_video(video_bytes, filename)
+            break
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("Drive upload attempt %d failed", attempt + 1)
+            if attempt == 1:
+                await context.bot.send_message(
+                    chat_id, f"❌ Google Drive 上傳失敗：{exc}"
+                )
+                session.reset()
+                return
+
+    session.drive_file_id = result["file_id"]
+    session.drive_link = result["link"]
+
+    mode_str = "multi_" + mode_code(session.image_mode)
+    cost = float(session.estimated_cost)
+    cost_tracker.record_generation(
+        model=model_key,
+        mode=mode_str,
+        duration=total_duration,
+        cost=cost,
+        youtube_url=None,
+        drive_url=session.drive_link,
+        shots=shots,
+        total_duration=total_duration,
+    )
+    session.actual_cost = cost
+    session.state = State.AWAITING_YOUTUBE_CONFIRM
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🚀 上傳 YouTube", callback_data="yt:yes")],
+        [InlineKeyboardButton("❌ 不了，謝謝", callback_data="yt:no")],
+    ])
+    body = (
+        f"✅ *{shots} 段影片已合併完成\\!*\n\n"
         f"🔗 {md2_url('Google Drive 預覽連結', session.drive_link)}\n\n"
         f"是否要上傳至 YouTube？"
     )

@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
+import os
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 
 class State:
@@ -17,6 +19,14 @@ class State:
     UPLOADING_DRIVE = "UPLOADING_DRIVE"
     AWAITING_YOUTUBE_CONFIRM = "AWAITING_YOUTUBE_CONFIRM"
     UPLOADING_YOUTUBE = "UPLOADING_YOUTUBE"
+    # multi-shot states
+    CLASSIFYING = "CLASSIFYING"
+    STORYBOARDING = "STORYBOARDING"
+    AWAITING_STORYBOARD_CONFIRM = "AWAITING_STORYBOARD_CONFIRM"
+    AWAITING_STORYBOARD_REVISION = "AWAITING_STORYBOARD_REVISION"
+    BUDGET_CHECK_MULTI = "BUDGET_CHECK_MULTI"
+    GENERATING_MULTI = "GENERATING_MULTI"
+    MERGING = "MERGING"
 
 
 @dataclass
@@ -37,6 +47,16 @@ class UserSession:
     actual_cost: float = 0.0
     generation_start_time: Optional[datetime] = None
     polling_task: Optional[asyncio.Task] = field(default=None, repr=False)
+    # multi-shot fields
+    shot_type: str = "single"
+    style_anchor: Optional[str] = None
+    scene_anchor: Optional[str] = None
+    storyboard: List[dict] = field(default_factory=list)
+    total_duration: int = 0
+    current_shot_index: int = 0
+    segment_paths: List[str] = field(default_factory=list)
+    last_frame_url: Optional[str] = None
+    merged_video_path: Optional[str] = None
 
     def clear_image(self) -> None:
         self.image_data = None
@@ -47,6 +67,12 @@ class UserSession:
 
     def reset(self) -> None:
         task = self.polling_task
+        for path in self.segment_paths:
+            with contextlib.suppress(FileNotFoundError):
+                os.remove(path)
+        if self.merged_video_path:
+            with contextlib.suppress(FileNotFoundError):
+                os.remove(self.merged_video_path)
         self.state = State.IDLE
         self.raw_prompt = ""
         self.optimized_prompt = ""
@@ -59,6 +85,15 @@ class UserSession:
         self.actual_cost = 0.0
         self.generation_start_time = None
         self.polling_task = None
+        self.shot_type = "single"
+        self.style_anchor = None
+        self.scene_anchor = None
+        self.storyboard = []
+        self.total_duration = 0
+        self.current_shot_index = 0
+        self.segment_paths = []
+        self.last_frame_url = None
+        self.merged_video_path = None
         if task is not None and not task.done():
             task.cancel()
 
