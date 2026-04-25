@@ -27,13 +27,23 @@ TOKEN_PATH = DATA_DIR / "token.json"
 CLIENT_SECRETS_PATH = DATA_DIR / "client_secrets.json"
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
-TELEGRAM_ALLOWED_USER_ID = int(os.getenv("TELEGRAM_ALLOWED_USER_ID", "0") or 0)
-_extra = os.getenv("TELEGRAM_ALLOWED_USER_IDS", "")
-TELEGRAM_ALLOWED_USER_IDS: set[int] = {
-    int(x) for x in _extra.split(",") if x.strip().isdigit()
-}
-if TELEGRAM_ALLOWED_USER_ID:
-    TELEGRAM_ALLOWED_USER_IDS.add(TELEGRAM_ALLOWED_USER_ID)
+
+
+def _parse_user_ids(*env_values: str) -> set[int]:
+    ids: set[int] = set()
+    for raw in env_values:
+        for part in (raw or "").split(","):
+            part = part.strip()
+            if part.isdigit() and int(part) > 0:
+                ids.add(int(part))
+    return ids
+
+
+TELEGRAM_ALLOWED_USER_IDS: set[int] = _parse_user_ids(
+    os.getenv("TELEGRAM_ALLOWED_USER_ID", ""),
+    os.getenv("TELEGRAM_ALLOWED_USER_IDS", ""),
+)
+TELEGRAM_ALLOWED_USER_ID = next(iter(TELEGRAM_ALLOWED_USER_IDS), 0)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 FAL_API_KEY = os.getenv("FAL_API_KEY", "")
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
