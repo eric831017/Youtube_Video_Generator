@@ -29,6 +29,7 @@ def _overview_text(settings: dict) -> str:
         str(settings["youtube_default_category"]),
     )
     budget_str = f"{float(settings['monthly_budget_usd']):.2f}"
+    optimize_label = "開啟" if settings.get("prompt_optimization_enabled", True) else "關閉"
     lines = [
         "⚙️ *目前設定*",
         "",
@@ -37,19 +38,25 @@ def _overview_text(settings: dict) -> str:
         f"預設時長：{md2(str(settings['default_duration']))} 秒",
         f"預設解析度：{md2(settings['default_resolution'])}",
         f"月預算上限：${md2(budget_str)}",
+        f"Prompt 優化：{md2(optimize_label)}",
         f"YouTube 隱私：{md2(settings['youtube_default_privacy'].title())}",
         f"YouTube 分類：{md2(cat)}",
     ]
     return "\n".join(lines)
 
 
-def _overview_keyboard() -> InlineKeyboardMarkup:
+def _overview_keyboard(settings: dict) -> InlineKeyboardMarkup:
+    optimize_on = settings.get("prompt_optimization_enabled", True)
+    optimize_btn_label = (
+        "🔕 關閉 Prompt 優化" if optimize_on else "🔔 開啟 Prompt 優化"
+    )
     rows = [
         [InlineKeyboardButton("修改模型", callback_data="set:model")],
         [InlineKeyboardButton("修改比例", callback_data="set:ratio")],
         [InlineKeyboardButton("修改時長", callback_data="set:duration")],
         [InlineKeyboardButton("修改解析度", callback_data="set:resolution")],
         [InlineKeyboardButton("修改月預算", callback_data="set:budget")],
+        [InlineKeyboardButton(optimize_btn_label, callback_data="set:toggle_optimize")],
         [InlineKeyboardButton("修改 YouTube 隱私", callback_data="set:privacy")],
         [InlineKeyboardButton("修改 YouTube 分類", callback_data="set:category")],
         [InlineKeyboardButton("✅ 關閉", callback_data="set:close")],
@@ -64,7 +71,7 @@ async def settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     await update.effective_message.reply_text(
         _overview_text(settings),
         parse_mode=ParseMode.MARKDOWN_V2,
-        reply_markup=_overview_keyboard(),
+        reply_markup=_overview_keyboard(settings),
     )
 
 
@@ -135,7 +142,17 @@ async def settings_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         await query.edit_message_text(
             _overview_text(settings),
             parse_mode=ParseMode.MARKDOWN_V2,
-            reply_markup=_overview_keyboard(),
+            reply_markup=_overview_keyboard(settings),
+        )
+        return
+
+    if data == "set:toggle_optimize":
+        current = load_settings().get("prompt_optimization_enabled", True)
+        settings = update_setting("prompt_optimization_enabled", not current)
+        await query.edit_message_text(
+            _overview_text(settings),
+            parse_mode=ParseMode.MARKDOWN_V2,
+            reply_markup=_overview_keyboard(settings),
         )
         return
 
@@ -180,7 +197,7 @@ async def settings_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         await query.edit_message_text(
             _overview_text(settings),
             parse_mode=ParseMode.MARKDOWN_V2,
-            reply_markup=_overview_keyboard(),
+            reply_markup=_overview_keyboard(settings),
         )
 
 

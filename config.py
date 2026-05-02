@@ -166,6 +166,7 @@ DEFAULT_SETTINGS: Dict[str, Any] = {
     "monthly_budget_usd": 10.00,
     "youtube_default_privacy": "public",
     "youtube_default_category": "28",
+    "prompt_optimization_enabled": True,
 }
 
 
