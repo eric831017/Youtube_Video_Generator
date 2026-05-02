@@ -195,33 +195,38 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
 
 async def _run_single_shot(message, session, context) -> None:
-    """Optimize prompt, check budget, and show single-shot confirmation."""
+    """Optimize prompt (if enabled), check budget, and show single-shot confirmation."""
     text = session.raw_prompt
-    session.state = State.OPTIMIZING
-    progress = await message.reply_text("⏳ 優化 Prompt 中...")
-
-    try:
-        optimized = await optimize_prompt(
-            raw_prompt=text,
-            image_mode=session.image_mode,
-            image_data=session.image_data,
-            image_mime=session.image_mime,
-        )
-    except Exception as exc:  # noqa: BLE001
-        logger.exception("Prompt optimization failed")
-        session.optimized_prompt = text
-        optimized = text
-        await progress.edit_text(
-            f"⚠️ Prompt 優化失敗（{exc}）。將使用原始輸入繼續。"
-        )
-    else:
-        session.optimized_prompt = optimized
-        try:
-            await progress.delete()
-        except Exception:  # noqa: BLE001
-            pass
-
     settings = load_settings()
+    optimize_enabled = settings.get("prompt_optimization_enabled", True)
+
+    if optimize_enabled:
+        session.state = State.OPTIMIZING
+        progress = await message.reply_text("⏳ 優化 Prompt 中...")
+        try:
+            optimized = await optimize_prompt(
+                raw_prompt=text,
+                image_mode=session.image_mode,
+                image_data=session.image_data,
+                image_mime=session.image_mime,
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("Prompt optimization failed")
+            session.optimized_prompt = text
+            optimized = text
+            await progress.edit_text(
+                f"⚠️ Prompt 優化失敗（{exc}）。將使用原始輸入繼續。"
+            )
+        else:
+            session.optimized_prompt = optimized
+            try:
+                await progress.delete()
+            except Exception:  # noqa: BLE001
+                pass
+    else:
+        optimized = text
+        session.optimized_prompt = text
+
     model_key = settings["default_model"]
     model_cfg = MODELS.get(model_key)
     if model_cfg is None:
@@ -250,8 +255,9 @@ async def _run_single_shot(message, session, context) -> None:
     session.state = State.AWAITING_CONFIRM
 
     mode_label = mode_emoji_label(session.image_mode)
+    prompt_header = "🎬 *優化後 Prompt：*" if optimize_enabled else "🎬 *使用者 Prompt（未優化）：*"
     lines = [
-        "🎬 *優化後 Prompt：*",
+        prompt_header,
         md2(optimized),
         "",
         "⚙️ *本次生成設定*",
