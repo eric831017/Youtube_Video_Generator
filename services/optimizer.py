@@ -6,6 +6,25 @@ from typing import Optional
 from config import logger
 from services.openai_client import get_client
 
+_REFUSAL_PREFIXES = (
+    "i'm sorry",
+    "i am sorry",
+    "i apologize",
+    "i cannot assist",
+    "i can't assist",
+    "i'm unable to",
+    "i am unable to",
+    "i'm not able to",
+    "i cannot help",
+    "i can't help",
+)
+
+
+def _is_refusal(text: str) -> bool:
+    lowered = text.lower().strip()
+    return any(lowered.startswith(p) for p in _REFUSAL_PREFIXES)
+
+
 SYSTEM_T2V = (
     "You are a cinematic AI video prompt expert.\n"
     "Rewrite the user's prompt to be more detailed and effective for AI video "
@@ -74,4 +93,24 @@ async def optimize_prompt(
     if not text:
         logger.warning("Optimizer returned empty string; using raw prompt")
         return raw_prompt
+
+    if _is_refusal(text):
+        logger.warning("Optimizer returned refusal (image may have triggered content policy); retrying text-only")
+        # Retry without image using T2V system prompt
+        text_only_messages = [
+            {"role": "system", "content": SYSTEM_T2V},
+            {"role": "user", "content": raw_prompt},
+        ]
+        retry_response = await client.chat.completions.create(
+            model="gpt-4o",
+            messages=text_only_messages,
+            temperature=0.7,
+            max_tokens=500,
+        )
+        retry_text = (retry_response.choices[0].message.content or "").strip()
+        if not retry_text or _is_refusal(retry_text):
+            logger.warning("Text-only retry also failed; using raw prompt")
+            return raw_prompt
+        return retry_text
+
     return text
